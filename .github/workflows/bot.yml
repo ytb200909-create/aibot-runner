@@ -26,10 +26,39 @@ jobs:
           printf '%s' "$BOT_CONFIG" > config.json
           python3 -c "import json; json.load(open('config.json')); print('config OK')"
 
-      # stdout duoc gui vao /dev/null de TIN NHAN nguoi dung khong xuat hien
-      # trong log cong khai cua repo. stderr (loi crash) van duoc giu lai.
-      - name: Run bot
-        run: python3 -u telegram_ai_bot.py > /dev/null
+      - name: Connectivity check
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request
+          c = json.load(open('config.json'))
+          url = 'https://api.telegram.org/bot' + c['telegram_bot_token'] + '/getMe'
+          try:
+              r = urllib.request.urlopen(url, timeout=20)
+              info = json.loads(r.read())['result']
+              print('getMe OK, HTTP', r.status, '- bot @' + str(info.get('username')))
+          except Exception as e:
+              print('getMe FAIL:', type(e).__name__, str(e)[:250])
+          PY
+
+      # Bot chay nen; log duoc luu vao /tmp/bot.log (TIN NHAN KHONG DUOC IN RA,
+      # chi loc cac dong trang thai/loi an toan).
+      - name: Run bot + health check
+        run: |
+          python3 -u telegram_ai_bot.py > /tmp/bot.log 2>&1 &
+          BPID=$!
+          echo "Bot PID $BPID"
+          for i in $(seq 1 57); do
+            sleep 60
+            if ! kill -0 $BPID 2>/dev/null; then
+              echo "BOT CHET o phut $i. Log cuoi:"
+              grep -aE "Telegram AI Controller|menu lenh|Traceback|Error|Loi|loi" /tmp/bot.log | tail -5
+              exit 1
+            fi
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "Bot con song, phut $i OK"
+            fi
+          done
+          echo "Bot song du 57 phut, ket thuc de ban sau tiep theo."
 
       - name: Heartbeat check
         if: always()
