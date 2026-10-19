@@ -1,0 +1,36 @@
+name: aibot
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Gioi thoi gian toi da cua 1 job la 60 phut, nen lich nay chay hang gio
+    # de bot luon duoc "huan doi" lien tuc (khong dung lau hon 1 phut moi chu ky).
+    - cron: "0 * * * *"
+
+concurrency:
+  group: aibot
+  # Neu mot run moi den, huy run cu -> khong bao gio chay 2 bot cung luc
+  cancel-in-progress: true
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 59
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write config from secret
+        env:
+          BOT_CONFIG: ${{ secrets.BOT_CONFIG }}
+        run: |
+          printf '%s' "$BOT_CONFIG" > config.json
+          python3 -c "import json; json.load(open('config.json')); print('config OK')"
+
+      # stdout duoc gui vao /dev/null de TIN NHAN nguoi dung khong xuat hien
+      # trong log cong khai cua repo. stderr (loi crash) van duoc giu lai.
+      - name: Run bot
+        run: python3 -u telegram_ai_bot.py > /dev/null
+
+      - name: Heartbeat check
+        if: always()
+        run: echo "Bot run ket thuc luc $(date -u)"

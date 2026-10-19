@@ -1,0 +1,6 @@
+# Telegram AI Controller - 24/7 cloud deployment
+# This bot uses only Python's standard library, so no third-party packages
+# are required. Telegram long-polling needs outbound internet access.
+
+# (empty is fine)
+# If your host requires a requirements.txt, leave it like this.
