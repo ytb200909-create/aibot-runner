@@ -25,6 +25,11 @@ input,select{width:100%;padding:10px;border:1px solid var(--border);border-radiu
 .row:last-child{border:0}
 .note{color:var(--warn);font-size:.9rem}
 small{color:var(--muted)}
+.btn{margin-top:12px;width:100%;padding:12px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border)}
+.chk input{width:22px;height:22px;flex:none}
+table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{padding:6px 4px;border-bottom:1px solid var(--border);text-align:left}
+tr.now{background:color-mix(in srgb,var(--accent) 15%,transparent)}
 </style>
 </head>
 <body>
@@ -66,13 +71,41 @@ small{color:var(--muted)}
 </div>
 
 <div class="card" id="out"></div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Uống vào lúc nào</h2>
+  <div id="timing"></div>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Nhắc nhở hằng ngày</h2>
+  <div class="grid" id="times"></div>
+  <button id="ics" class="btn">📅 Thêm nhắc nhở vào Lịch iPhone</button>
+  <small style="display:block;margin-top:6px">Bấm nút → mở file → chọn “Thêm tất cả”. Lịch sẽ báo mỗi ngày đúng giờ, kể cả khi không mở trang này.</small>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Hôm nay</h2>
+  <div id="today"></div>
+  <div class="grid" style="margin-top:10px">
+    <div><label>Cân sáng nay (kg)</label><input id="logw" type="number" step="0.1"></div>
+    <div style="display:flex;align-items:end"><button id="savew" class="btn" style="margin:0">Lưu cân nặng</button></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Lộ trình từng tuần</h2>
+  <div class="grid"><div><label>Ngày bắt đầu</label><input id="start" type="date"></div></div>
+  <div id="plan" style="margin-top:10px"></div>
+</div>
 <p><small>Công thức: BMR Mifflin-St Jeor × hệ số vận động, cộng thặng dư ~7700 kcal cho mỗi kg tăng. Protein mục tiêu 1.8 g/kg. Đây là ước tính; cân lại mỗi tuần và chỉnh kcal ±200 nếu không đúng tiến độ.</small></p>
 </main>
 <script>
 const P={whey:{k:120,p:24,g:30},mass:{k:380,p:16,g:100}};
-let type='whey';
+let type='whey',last={};
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const $=id=>document.getElementById(id);
-function setType(t){type=t;$('bWhey').classList.toggle('on',t==='whey');$('bMass').classList.toggle('on',t==='mass');
+function setType(t){type=t;LS.set('type',t);$('bWhey').classList.toggle('on',t==='whey');$('bMass').classList.toggle('on',t==='mass');
   $('sk').value=P[t].k;$('sp').value=P[t].p;$('sg').value=P[t].g;calc();}
 $('bWhey').onclick=()=>setType('whey');$('bMass').onclick=()=>setType('mass');
 function calc(){
@@ -107,9 +140,59 @@ function calc(){
   if(!gain&&diff<0) html+=`<p class="note">Mục tiêu thấp hơn cân hiện tại: không nên dùng Mass, chỉ dùng Whey để bù protein.</p>`;
   if(Math.abs(diff)<0.1) html+=`<p class="note">Bạn đã đạt mục tiêu — giữ kcal ở mức TDEE.</p>`;
   $('out').innerHTML=html;
+  last={sc,w,t,rate,weeks,gain,sk,sp};extra();
 }
 document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));
-setType('whey');
+
+function slots(){
+  const n=Math.ceil(last.sc||0), m=type==='mass';
+  const all=[
+    {id:'s',name:'Bữa sáng',time:'07:30',why:m?'Nạp năng lượng đầu ngày, pha cùng sữa/yến mạch.':'Bù protein sau một đêm nhịn đói.'},
+    {id:'p',name:'Trong 30–60 phút sau tập',time:'18:00',why:'Quan trọng nhất – cơ phục hồi và hấp thu tốt nhất.'},
+    {id:'b',name:'Bữa phụ chiều',time:'15:30',why:'Giữa 2 bữa chính, không làm no bữa tối.'},
+    {id:'n',name:'Trước ngủ 1 tiếng',time:'21:30',why:m?'Thêm kcal khi khó ăn đủ trong ngày.':'Protein cho cơ phục hồi qua đêm.'}];
+  const order=m?['p','s','b','n']:['p','s','n','b'];
+  return order.slice(0,Math.max(1,n)).map(id=>all.find(x=>x.id===id));
+}
+function portions(){const sc=last.sc||0,n=Math.max(1,Math.ceil(sc));return Array.from({length:n},(_,i)=>i<n-1?1:(sc-(n-1)||1));}
+function key(d){return d.toISOString().slice(0,10)}
+function extra(){
+  const sl=slots(),po=portions(),tm=LS.get('times',{});
+  $('timing').innerHTML=(last.sc?sl.map((x,i)=>`<div class="row"><span><b>${x.name}</b> – ${po[i]} muỗng<br><small>${x.why}</small></span></div>`).join(''):'<small>Không cần uống thêm.</small>')
+   +`<p><small>Ngày nghỉ tập: uống liều “sau tập” vào bữa sáng hoặc bữa phụ. Pha với 250–300 ml nước/sữa, lắc kỹ. Không thay bữa chính bằng bột.</small></p>`;
+  $('times').innerHTML=sl.map(x=>`<div><label>${x.name}</label><input type="time" data-id="${x.id}" value="${tm[x.id]||x.time}"></div>`).join('');
+  $('times').querySelectorAll('input').forEach(e=>e.onchange=()=>{const t=LS.get('times',{});t[e.dataset.id]=e.value;LS.set('times',t);});
+  const today=key(new Date()),done=LS.get('done',{});const d=done[today]||{};
+  const st=new Date($('start').value||today), day=Math.floor((new Date(today)-st)/864e5)+1;
+  const exp=last.w+(last.gain?1:-1)*last.rate*(day-1)/7;
+  let streak=0;for(let i=0;;i++){const k=key(new Date(Date.now()-i*864e5));const v=done[k];if(v&&sl.every(x=>v[x.id]))streak++;else if(i>0)break;else continue;}
+  $('today').innerHTML=`<div class="row"><span>Ngày thứ</span><b>${day>0?day:'chưa bắt đầu'}</b></div>
+   <div class="row"><span>Cân nặng nên đạt hôm nay</span><b>${(day>0?exp:last.w).toFixed(1)} kg</b></div>
+   <div class="row"><span>Chuỗi ngày uống đủ</span><b>🔥 ${streak} ngày</b></div>`+
+   sl.map((x,i)=>`<label class="chk"><input type="checkbox" data-id="${x.id}" ${d[x.id]?'checked':''}><span>${x.name} – ${portions()[i]} muỗng</span></label>`).join('');
+  $('today').querySelectorAll('input').forEach(e=>e.onchange=()=>{const a=LS.get('done',{});a[today]=a[today]||{};a[today][e.dataset.id]=e.checked;LS.set('done',a);extra();});
+  const logs=LS.get('weights',{});
+  const wk=Math.ceil(last.weeks||0);let rows='';
+  for(let i=0;i<=Math.min(wk,104);i++){const dt=new Date(st.getTime()+i*7*864e5),k=key(dt);
+    const target=Math.min(last.gain?last.t:99e9,Math.max(last.gain?0:last.t,last.w+(last.gain?1:-1)*last.rate*i));
+    const real=Object.keys(logs).filter(x=>x>=k&&x<key(new Date(dt.getTime()+7*864e5))).map(x=>logs[x]).pop();
+    const now=today>=k&&today<key(new Date(dt.getTime()+7*864e5));
+    rows+=`<tr class="${now?'now':''}"><td>Tuần ${i}</td><td>${dt.toLocaleDateString('vi-VN')}</td><td>${target.toFixed(1)} kg</td><td>${real?real+' kg':'–'}</td></tr>`;}
+  $('plan').innerHTML=`<table><tr><th></th><th>Từ ngày</th><th>Mục tiêu</th><th>Thực tế</th></tr>${rows}</table>
+   <p><small>Mỗi ngày tăng ~${(last.rate/7*1000).toFixed(0)} g. Cân vào buổi sáng sau khi đi vệ sinh, trước khi ăn. Nếu 2 tuần liền thấp hơn mục tiêu, thêm ~200 kcal/ngày; cao hơn thì bớt 200 kcal.</small></p>`;
+}
+$('start').value=LS.get('start',key(new Date()));
+$('start').onchange=()=>{LS.set('start',$('start').value);extra();};
+$('savew').onclick=()=>{const v=+$('logw').value;if(!v)return;const l=LS.get('weights',{});l[key(new Date())]=v;LS.set('weights',l);$('w').value=v;calc();};
+$('ics').onclick=()=>{
+  const sl=slots(),po=portions(),tm=LS.get('times',{}),d=new Date(),ds=key(d).replace(/-/g,'');
+  let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WheyMass//VI\r\n';
+  sl.forEach((x,i)=>{const t=(tm[x.id]||x.time).replace(':','')+'00';
+    ics+=`BEGIN:VEVENT\r\nUID:wheymass-${x.id}-${Date.now()}@local\r\nDTSTAMP:${ds}T000000Z\r\nDTSTART:${ds}T${t}\r\nDURATION:PT10M\r\nRRULE:FREQ=DAILY\r\nSUMMARY:🥤 Uống ${po[i]} muỗng ${type==='whey'?'Whey':'Mass'} (${x.name})\r\nDESCRIPTION:${x.why}\r\nBEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Đến giờ uống ${type==='whey'?'Whey':'Mass'}\r\nTRIGGER:PT0M\r\nEND:VALARM\r\nEND:VEVENT\r\n`;});
+  ics+='END:VCALENDAR\r\n';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='nhac-uong-whey.ics';document.body.appendChild(a);a.click();a.remove();
+};
+setType(LS.get('type','whey'));
 </script>
 </body>
 </html>
