@@ -3,6 +3,8 @@ on:
   push:
     paths: ["ios/**", "whey-mass-calculator.html", ".github/workflows/ios-ipa.yml"]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: macos-15
@@ -28,3 +30,9 @@ jobs:
         with:
           name: WheyMass-unsigned-ipa
           path: WheyMass-unsigned.ipa
+      - name: Push IPA to ipa-build branch
+        run: |
+          mkdir out && cp WheyMass-unsigned.ipa out/ && cd out
+          git init -q -b ipa-build && git add . 
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "IPA ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ipa-build
