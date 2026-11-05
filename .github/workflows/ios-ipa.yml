@@ -1,0 +1,28 @@
+name: Build unsigned IPA
+on:
+  push:
+    paths: ["ios/**", "whey-mass-calculator.html", ".github/workflows/ios-ipa.yml"]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync HTML
+        run: cp whey-mass-calculator.html ios/WheyMass/index.html
+      - name: Generate project
+        run: brew install xcodegen && cd ios && xcodegen
+      - name: Build
+        run: |
+          cd ios
+          xcodebuild -project WheyMass.xcodeproj -scheme WheyMass -configuration Release \
+            -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -r ios/build/Build/Products/Release-iphoneos/WheyMass.app Payload/
+          zip -qr WheyMass-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WheyMass-unsigned-ipa
+          path: WheyMass-unsigned.ipa
