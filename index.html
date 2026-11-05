@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Liều Whey Mass</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1b1f24;--muted:#5d6670;--accent:#1f7a5a;--border:#dde1e6;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121417;--card:#1c1f24;--text:#e8eaed;--muted:#9aa3ad;--accent:#4cc79a;--border:#2e333a;--warn:#f0a35a}}
+:root[data-theme="dark"]{--bg:#121417;--card:#1c1f24;--text:#e8eaed;--muted:#9aa3ad;--accent:#4cc79a;--border:#2e333a;--warn:#f0a35a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.5rem;margin:0 0 4px}
+p.sub{color:var(--muted);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:1rem}
+.seg{display:flex;gap:8px;margin-bottom:12px}
+.seg button{flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:1rem;cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.big{font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1.1}
+.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--border)}
+.row:last-child{border:0}
+.note{color:var(--warn);font-size:.9rem}
+small{color:var(--muted)}
+.btn{margin-top:12px;width:100%;padding:12px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border)}
+.chk input{width:22px;height:22px;flex:none}
+table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{padding:6px 4px;border-bottom:1px solid var(--border);text-align:left}
+tr.now{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+</style>
+</head>
+<body>
+<main>
+<h1>Tính liều Whey / Mass mỗi ngày</h1>
+<p class="sub">Nhập số liệu của bạn để biết cần uống bao nhiêu muỗng mỗi ngày để đạt mục tiêu cân nặng.</p>
+
+<div class="card">
+  <div class="grid">
+    <div><label>Cân nặng hiện tại (kg)</label><input id="w" type="number" value="60" step="0.1"></div>
+    <div><label>Mục tiêu (kg)</label><input id="t" type="number" value="75" step="0.1"></div>
+    <div><label>Chiều cao (cm)</label><input id="h" type="number" value="170"></div>
+    <div><label>Tuổi</label><input id="a" type="number" value="22"></div>
+    <div><label>Giới tính</label><select id="s"><option value="m">Nam</option><option value="f">Nữ</option></select></div>
+    <div><label>Mức vận động</label><select id="act">
+      <option value="1.2">Ít vận động</option>
+      <option value="1.375">Tập 1–3 buổi/tuần</option>
+      <option value="1.55" selected>Tập 3–5 buổi/tuần</option>
+      <option value="1.725">Tập 6–7 buổi/tuần</option>
+    </select></div>
+    <div><label>Tốc độ tăng (kg/tuần)</label><select id="rate">
+      <option value="0.25">0.25 – chậm, ít mỡ</option>
+      <option value="0.5" selected>0.5 – vừa</option>
+      <option value="0.75">0.75 – nhanh</option>
+    </select></div>
+    <div><label>Số bữa chính/ngày</label><select id="meals"><option value="2">2 bữa</option><option value="3" selected>3 bữa</option><option value="4">3 bữa + ăn vặt</option></select></div>
+    <div><label>Mỗi bữa ăn khoảng</label><select id="bowl"><option value="1">1 bát cơm / ăn ít</option><option value="2" selected>2 bát cơm / vừa</option><option value="3">3 bát trở lên / nhiều</option></select></div>
+    <div><label>Thịt/cá/trứng mỗi bữa</label><select id="meat"><option value="15">Ít (vài miếng)</option><option value="25" selected>Vừa (1 lòng bàn tay)</option><option value="35">Nhiều</option></select></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="seg"><button id="bWhey" class="on">Whey</button><button id="bMass">Mass</button></div>
+  <div class="grid">
+    <div><label>Kcal / 1 muỗng</label><input id="sk" type="number"></div>
+    <div><label>Protein / 1 muỗng (g)</label><input id="sp" type="number"></div>
+    <div><label>Gram / 1 muỗng</label><input id="sg" type="number"></div>
+  </div>
+  <small>Xem trên nhãn hộp sản phẩm của bạn và sửa lại cho đúng.</small>
+</div>
+
+<div class="card" id="out"></div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Uống vào lúc nào</h2>
+  <div id="timing"></div>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Nhắc nhở hằng ngày</h2>
+  <div class="grid" id="times"></div>
+  <button id="ics" class="btn">📅 Thêm nhắc nhở vào Lịch iPhone</button>
+  <small style="display:block;margin-top:6px">Bấm nút → mở file → chọn “Thêm tất cả”. Lịch sẽ báo mỗi ngày đúng giờ, kể cả khi không mở trang này.</small>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Hôm nay</h2>
+  <div id="today"></div>
+  <div class="grid" style="margin-top:10px">
+    <div><label>Cân sáng nay (kg)</label><input id="logw" type="number" step="0.1"></div>
+    <div style="display:flex;align-items:end"><button id="savew" class="btn" style="margin:0">Lưu cân nặng</button></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin:0 0 8px;font-size:1.15rem">Lộ trình từng tuần</h2>
+  <div class="grid"><div><label>Ngày bắt đầu</label><input id="start" type="date"></div></div>
+  <div id="plan" style="margin-top:10px"></div>
+</div>
+<p><small>Công thức: BMR Mifflin-St Jeor × hệ số vận động, cộng thặng dư ~7700 kcal cho mỗi kg tăng. Protein mục tiêu 1.8 g/kg. Đây là ước tính; cân lại mỗi tuần và chỉnh kcal ±200 nếu không đúng tiến độ.</small></p>
+</main>
+<script>
+const P={whey:{k:120,p:24,g:30},mass:{k:380,p:16,g:100}};
+let type='whey',last={};
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const $=id=>document.getElementById(id);
+function setType(t){type=t;LS.set('type',t);$('bWhey').classList.toggle('on',t==='whey');$('bMass').classList.toggle('on',t==='mass');
+  $('sk').value=P[t].k;$('sp').value=P[t].p;$('sg').value=P[t].g;calc();}
+$('bWhey').onclick=()=>setType('whey');$('bMass').onclick=()=>setType('mass');
+function calc(){
+  const w=+$('w').value,t=+$('t').value,h=+$('h').value,a=+$('a').value,act=+$('act').value,
+        rate=+$('rate').value,meals=+$('meals').value,bowl=+$('bowl').value,meat=+$('meat').value,
+        nm=Math.min(meals,3)+(meals>3?0.5:0),food=nm*(bowl*200+meat*6+150),foodp=nm*(meat+bowl*4),
+        sk=+$('sk').value||1,sp=+$('sp').value||0,sg=+$('sg').value||0;
+  const bmr=10*w+6.25*h-5*a+($('s').value==='m'?5:-161);
+  const tdee=bmr*act, diff=t-w;
+  const gain=diff>0;
+  const target=gain?tdee+rate*7700/7:tdee-rate*7700/7;
+  const protTarget=1.8*t;
+  const kcalGap=target-food, protGap=protTarget-foodp;
+  let scoops;
+  if(type==='mass') scoops=Math.max(0,kcalGap/sk);
+  else scoops=Math.max(0,protGap/(sp||1));
+  const adj=trend(rate,diff>0);scoops+=adj.d;
+  scoops=Math.min(Math.max(scoops,0),3);
+  const sc=Math.round(scoops*2)/2;
+  const weeks=Math.abs(diff)/rate;
+  const extraK=kcalGap-sc*sk;
+  let html=`<label>Liều ${type==='whey'?'Whey':'Mass'} mỗi ngày</label>
+  <div class="big">${sc} muỗng</div><small>≈ ${Math.round(sc*sg)} g bột · ${Math.round(sc*sk)} kcal · ${Math.round(sc*sp)} g protein</small>
+  <div style="margin-top:14px">
+  <div class="row"><span>Năng lượng duy trì (TDEE)</span><b>${Math.round(tdee)} kcal</b></div>
+  <div class="row"><span>Kcal mục tiêu/ngày</span><b>${Math.round(target)} kcal</b></div>
+  <div class="row"><span>Protein mục tiêu/ngày</span><b>${Math.round(protTarget)} g</b></div>
+  <div class="row"><span>Cần thay đổi</span><b>${diff>0?'+':''}${diff.toFixed(1)} kg</b></div>
+  <div class="row"><span>Thời gian dự kiến</span><b>~${Math.ceil(weeks)} tuần (${(weeks/4.3).toFixed(1)} tháng)</b></div>
+  </div>`;
+  html+=`<p class="note" style="color:var(--accent)">${adj.msg}</p><p><small>Ước tính bữa ăn: ~${Math.round(food)} kcal, ${Math.round(foodp)} g protein/ngày.</small></p>`;
+  if(sc>0) html+=`<p><small>Gợi ý: chia ${sc>1?'thành '+Math.ceil(sc)+' lần (1 lần sau tập, còn lại giữa các bữa)':'uống sau tập hoặc bữa sáng'}.</small></p>`;
+  if(extraK>150&&gain) html+=`<p class="note">Vẫn thiếu ~${Math.round(extraK)} kcal/ngày — ăn thêm bữa phụ${type==='whey'?' hoặc chuyển sang Mass':''}.</p>`;
+  if(kcalGap/sk>3&&type==='mass') html+=`<p class="note">Liều tối đa nên giữ ≤ 3 muỗng; phần còn lại hãy bù bằng đồ ăn thật.</p>`;
+  if(!gain&&diff<0) html+=`<p class="note">Mục tiêu thấp hơn cân hiện tại: không nên dùng Mass, chỉ dùng Whey để bù protein.</p>`;
+  if(Math.abs(diff)<0.1) html+=`<p class="note">Bạn đã đạt mục tiêu — giữ kcal ở mức TDEE.</p>`;
+  $('out').innerHTML=html;
+  last={sc,w,t,rate,weeks,gain,sk,sp};extra();
+}
+document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));
+
+function trend(rate,gain){
+  const l=LS.get('weights',{}),ks=Object.keys(l).sort();
+  if(ks.length<2) return {d:0,msg:'Không cần đếm calo: chỉ cần cân mỗi sáng và bấm “Lưu cân nặng”. Sau 1 tuần app sẽ tự tăng/giảm liều theo cân thực tế.'};
+  const a=ks[0],b=ks[ks.length-1],days=(new Date(b)-new Date(a))/864e5;
+  if(days<7) return {d:0,msg:`Đã có ${ks.length} lần cân (${days} ngày). Cần ≥7 ngày để app tự chỉnh liều.`};
+  const per=(l[b]-l[a])/days*7, want=gain?rate:-rate, r=per/want;
+  let d=0,msg;
+  if(gain&&r<0.6){d=0.5;msg=`Bạn đang tăng ${per.toFixed(2)} kg/tuần (mục tiêu ${rate}). App đã TĂNG liều thêm 0.5 muỗng.`}
+  else if(gain&&r>1.5){d=-0.5;msg=`Bạn tăng ${per.toFixed(2)} kg/tuần – nhanh quá, dễ tích mỡ. App đã GIẢM 0.5 muỗng.`}
+  else msg=`Bạn đang thay đổi ${per.toFixed(2)} kg/tuần – đúng tiến độ, giữ nguyên liều.`;
+  return {d,msg};
+}
+function slots(){
+  const n=Math.ceil(last.sc||0), m=type==='mass';
+  const all=[
+    {id:'s',name:'Bữa sáng',time:'07:30',why:m?'Nạp năng lượng đầu ngày, pha cùng sữa/yến mạch.':'Bù protein sau một đêm nhịn đói.'},
+    {id:'p',name:'Trong 30–60 phút sau tập',time:'18:00',why:'Quan trọng nhất – cơ phục hồi và hấp thu tốt nhất.'},
+    {id:'b',name:'Bữa phụ chiều',time:'15:30',why:'Giữa 2 bữa chính, không làm no bữa tối.'},
+    {id:'n',name:'Trước ngủ 1 tiếng',time:'21:30',why:m?'Thêm kcal khi khó ăn đủ trong ngày.':'Protein cho cơ phục hồi qua đêm.'}];
+  const order=m?['p','s','b','n']:['p','s','n','b'];
+  return order.slice(0,Math.max(1,n)).map(id=>all.find(x=>x.id===id));
+}
+function portions(){const sc=last.sc||0,n=Math.max(1,Math.ceil(sc));return Array.from({length:n},(_,i)=>i<n-1?1:(sc-(n-1)||1));}
+function key(d){return d.toISOString().slice(0,10)}
+function extra(){
+  const sl=slots(),po=portions(),tm=LS.get('times',{});
+  $('timing').innerHTML=(last.sc?sl.map((x,i)=>`<div class="row"><span><b>${x.name}</b> – ${po[i]} muỗng<br><small>${x.why}</small></span></div>`).join(''):'<small>Không cần uống thêm.</small>')
+   +`<p><small>Ngày nghỉ tập: uống liều “sau tập” vào bữa sáng hoặc bữa phụ. Pha với 250–300 ml nước/sữa, lắc kỹ. Không thay bữa chính bằng bột.</small></p>`;
+  $('times').innerHTML=sl.map(x=>`<div><label>${x.name}</label><input type="time" data-id="${x.id}" value="${tm[x.id]||x.time}"></div>`).join('');
+  $('times').querySelectorAll('input').forEach(e=>e.onchange=()=>{const t=LS.get('times',{});t[e.dataset.id]=e.value;LS.set('times',t);});
+  const today=key(new Date()),done=LS.get('done',{});const d=done[today]||{};
+  const st=new Date($('start').value||today), day=Math.floor((new Date(today)-st)/864e5)+1;
+  const exp=last.w+(last.gain?1:-1)*last.rate*(day-1)/7;
+  let streak=0;for(let i=0;;i++){const k=key(new Date(Date.now()-i*864e5));const v=done[k];if(v&&sl.every(x=>v[x.id]))streak++;else if(i>0)break;else continue;}
+  $('today').innerHTML=`<div class="row"><span>Ngày thứ</span><b>${day>0?day:'chưa bắt đầu'}</b></div>
+   <div class="row"><span>Cân nặng nên đạt hôm nay</span><b>${(day>0?exp:last.w).toFixed(1)} kg</b></div>
+   <div class="row"><span>Chuỗi ngày uống đủ</span><b>🔥 ${streak} ngày</b></div>`+
+   sl.map((x,i)=>`<label class="chk"><input type="checkbox" data-id="${x.id}" ${d[x.id]?'checked':''}><span>${x.name} – ${portions()[i]} muỗng</span></label>`).join('');
+  $('today').querySelectorAll('input').forEach(e=>e.onchange=()=>{const a=LS.get('done',{});a[today]=a[today]||{};a[today][e.dataset.id]=e.checked;LS.set('done',a);extra();});
+  const logs=LS.get('weights',{});
+  const wk=Math.ceil(last.weeks||0);let rows='';
+  for(let i=0;i<=Math.min(wk,104);i++){const dt=new Date(st.getTime()+i*7*864e5),k=key(dt);
+    const target=Math.min(last.gain?last.t:99e9,Math.max(last.gain?0:last.t,last.w+(last.gain?1:-1)*last.rate*i));
+    const real=Object.keys(logs).filter(x=>x>=k&&x<key(new Date(dt.getTime()+7*864e5))).map(x=>logs[x]).pop();
+    const now=today>=k&&today<key(new Date(dt.getTime()+7*864e5));
+    rows+=`<tr class="${now?'now':''}"><td>Tuần ${i}</td><td>${dt.toLocaleDateString('vi-VN')}</td><td>${target.toFixed(1)} kg</td><td>${real?real+' kg':'–'}</td></tr>`;}
+  $('plan').innerHTML=`<table><tr><th></th><th>Từ ngày</th><th>Mục tiêu</th><th>Thực tế</th></tr>${rows}</table>
+   <p><small>Mỗi ngày tăng ~${(last.rate/7*1000).toFixed(0)} g. Cân vào buổi sáng sau khi đi vệ sinh, trước khi ăn. Nếu 2 tuần liền thấp hơn mục tiêu, thêm ~200 kcal/ngày; cao hơn thì bớt 200 kcal.</small></p>`;
+}
+$('start').value=LS.get('start',key(new Date()));
+$('start').onchange=()=>{LS.set('start',$('start').value);extra();};
+$('savew').onclick=()=>{const v=+$('logw').value;if(!v)return;const l=LS.get('weights',{});l[key(new Date())]=v;LS.set('weights',l);calc();};
+$('ics').onclick=()=>{
+  const sl=slots(),po=portions(),tm=LS.get('times',{}),d=new Date(),ds=key(d).replace(/-/g,'');
+  let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WheyMass//VI\r\n';
+  sl.forEach((x,i)=>{const t=(tm[x.id]||x.time).replace(':','')+'00';
+    ics+=`BEGIN:VEVENT\r\nUID:wheymass-${x.id}-${Date.now()}@local\r\nDTSTAMP:${ds}T000000Z\r\nDTSTART:${ds}T${t}\r\nDURATION:PT10M\r\nRRULE:FREQ=DAILY\r\nSUMMARY:🥤 Uống ${po[i]} muỗng ${type==='whey'?'Whey':'Mass'} (${x.name})\r\nDESCRIPTION:${x.why}\r\nBEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Đến giờ uống ${type==='whey'?'Whey':'Mass'}\r\nTRIGGER:PT0M\r\nEND:VALARM\r\nEND:VEVENT\r\n`;});
+  ics+='END:VCALENDAR\r\n';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='nhac-uong-whey.ics';document.body.appendChild(a);a.click();a.remove();
+};
+setType(LS.get('type','whey'));
+</script>
+</body>
+</html>
