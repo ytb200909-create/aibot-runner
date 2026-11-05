@@ -56,8 +56,9 @@ tr.now{background:color-mix(in srgb,var(--accent) 15%,transparent)}
       <option value="0.5" selected>0.5 – vừa</option>
       <option value="0.75">0.75 – nhanh</option>
     </select></div>
-    <div><label>Kcal ăn từ bữa chính/ngày (ước tính)</label><input id="food" type="number" value="2000" step="50"></div>
-    <div><label>Protein từ bữa chính/ngày (g)</label><input id="foodp" type="number" value="70"></div>
+    <div><label>Số bữa chính/ngày</label><select id="meals"><option value="2">2 bữa</option><option value="3" selected>3 bữa</option><option value="4">3 bữa + ăn vặt</option></select></div>
+    <div><label>Mỗi bữa ăn khoảng</label><select id="bowl"><option value="1">1 bát cơm / ăn ít</option><option value="2" selected>2 bát cơm / vừa</option><option value="3">3 bát trở lên / nhiều</option></select></div>
+    <div><label>Thịt/cá/trứng mỗi bữa</label><select id="meat"><option value="15">Ít (vài miếng)</option><option value="25" selected>Vừa (1 lòng bàn tay)</option><option value="35">Nhiều</option></select></div>
   </div>
 </div>
 
@@ -111,7 +112,8 @@ function setType(t){type=t;LS.set('type',t);$('bWhey').classList.toggle('on',t==
 $('bWhey').onclick=()=>setType('whey');$('bMass').onclick=()=>setType('mass');
 function calc(){
   const w=+$('w').value,t=+$('t').value,h=+$('h').value,a=+$('a').value,act=+$('act').value,
-        rate=+$('rate').value,food=+$('food').value,foodp=+$('foodp').value,
+        rate=+$('rate').value,meals=+$('meals').value,bowl=+$('bowl').value,meat=+$('meat').value,
+        nm=Math.min(meals,3)+(meals>3?0.5:0),food=nm*(bowl*200+meat*6+150),foodp=nm*(meat+bowl*4),
         sk=+$('sk').value||1,sp=+$('sp').value||0,sg=+$('sg').value||0;
   const bmr=10*w+6.25*h-5*a+($('s').value==='m'?5:-161);
   const tdee=bmr*act, diff=t-w;
@@ -122,7 +124,8 @@ function calc(){
   let scoops;
   if(type==='mass') scoops=Math.max(0,kcalGap/sk);
   else scoops=Math.max(0,protGap/(sp||1));
-  scoops=Math.min(scoops,type==='whey'?3:3);
+  const adj=trend(rate,diff>0);scoops+=adj.d;
+  scoops=Math.min(Math.max(scoops,0),3);
   const sc=Math.round(scoops*2)/2;
   const weeks=Math.abs(diff)/rate;
   const extraK=kcalGap-sc*sk;
@@ -135,6 +138,7 @@ function calc(){
   <div class="row"><span>Cần thay đổi</span><b>${diff>0?'+':''}${diff.toFixed(1)} kg</b></div>
   <div class="row"><span>Thời gian dự kiến</span><b>~${Math.ceil(weeks)} tuần (${(weeks/4.3).toFixed(1)} tháng)</b></div>
   </div>`;
+  html+=`<p class="note" style="color:var(--accent)">${adj.msg}</p><p><small>Ước tính bữa ăn: ~${Math.round(food)} kcal, ${Math.round(foodp)} g protein/ngày.</small></p>`;
   if(sc>0) html+=`<p><small>Gợi ý: chia ${sc>1?'thành '+Math.ceil(sc)+' lần (1 lần sau tập, còn lại giữa các bữa)':'uống sau tập hoặc bữa sáng'}.</small></p>`;
   if(extraK>150&&gain) html+=`<p class="note">Vẫn thiếu ~${Math.round(extraK)} kcal/ngày — ăn thêm bữa phụ${type==='whey'?' hoặc chuyển sang Mass':''}.</p>`;
   if(kcalGap/sk>3&&type==='mass') html+=`<p class="note">Liều tối đa nên giữ ≤ 3 muỗng; phần còn lại hãy bù bằng đồ ăn thật.</p>`;
@@ -145,6 +149,18 @@ function calc(){
 }
 document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));
 
+function trend(rate,gain){
+  const l=LS.get('weights',{}),ks=Object.keys(l).sort();
+  if(ks.length<2) return {d:0,msg:'Không cần đếm calo: chỉ cần cân mỗi sáng và bấm “Lưu cân nặng”. Sau 1 tuần app sẽ tự tăng/giảm liều theo cân thực tế.'};
+  const a=ks[0],b=ks[ks.length-1],days=(new Date(b)-new Date(a))/864e5;
+  if(days<7) return {d:0,msg:`Đã có ${ks.length} lần cân (${days} ngày). Cần ≥7 ngày để app tự chỉnh liều.`};
+  const per=(l[b]-l[a])/days*7, want=gain?rate:-rate, r=per/want;
+  let d=0,msg;
+  if(gain&&r<0.6){d=0.5;msg=`Bạn đang tăng ${per.toFixed(2)} kg/tuần (mục tiêu ${rate}). App đã TĂNG liều thêm 0.5 muỗng.`}
+  else if(gain&&r>1.5){d=-0.5;msg=`Bạn tăng ${per.toFixed(2)} kg/tuần – nhanh quá, dễ tích mỡ. App đã GIẢM 0.5 muỗng.`}
+  else msg=`Bạn đang thay đổi ${per.toFixed(2)} kg/tuần – đúng tiến độ, giữ nguyên liều.`;
+  return {d,msg};
+}
 function slots(){
   const n=Math.ceil(last.sc||0), m=type==='mass';
   const all=[
@@ -184,7 +200,7 @@ function extra(){
 }
 $('start').value=LS.get('start',key(new Date()));
 $('start').onchange=()=>{LS.set('start',$('start').value);extra();};
-$('savew').onclick=()=>{const v=+$('logw').value;if(!v)return;const l=LS.get('weights',{});l[key(new Date())]=v;LS.set('weights',l);$('w').value=v;calc();};
+$('savew').onclick=()=>{const v=+$('logw').value;if(!v)return;const l=LS.get('weights',{});l[key(new Date())]=v;LS.set('weights',l);calc();};
 $('ics').onclick=()=>{
   const sl=slots(),po=portions(),tm=LS.get('times',{}),d=new Date(),ds=key(d).replace(/-/g,'');
   let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//WheyMass//VI\r\n';
